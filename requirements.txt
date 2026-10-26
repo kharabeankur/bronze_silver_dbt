@@ -1,0 +1,5 @@
+# dbt toolchain for phase 1. dbt >= 1.9 is required (YAML snapshots,
+# snapshot_meta_column_names, dbt_valid_to_current, hard_deletes).
+# OPEN ITEM: confirm the exact versions with the platform team, then pin exactly.
+dbt-core~=1.10.0
+dbt-databricks~=1.10.0
