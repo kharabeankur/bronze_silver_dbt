@@ -3,7 +3,7 @@
 # dbt finds this file automatically when you run dbt from the dbt/ folder.
 #   local       personal access token (your laptop)
 #   dev/test/prod  service principal (OAuth M2M) - for scheduled/CI runs later
-# Time zone is pinned to UTC so timestamps compare consistently with 9999-12-31.
+# Time zone is pinned to UTC so timestamps (and their hashes) are consistent.
 # ---------------------------------------------------------------------------
 gcp_lakehouse:
   target: "{{ env_var('DBT_TARGET', 'local') }}"

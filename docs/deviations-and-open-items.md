@@ -3,7 +3,9 @@
 Sources compared: Blueprint DBX v1.1 (BP), RFP draft v0.2, meeting summary "Databricks repo" (MTG),
 Naming Conventions v0.4 (NC), files 11–18 (PowerDesigner models, keys/hashes/dates).
 Each item says what the documents say, what this repo does, and who should decide.
-Phase 1 scope: dbt bronze → silver only. Alerting, monitoring, Docker, CI/CD and job deployment are phase 2.
+Phase 1 scope: dbt bronze → silver, **current state only**. SCD2, CDC, alerting, monitoring, Docker,
+CI/CD and job deployment are phase 2. Items about SCD2 / CDC / snapshots (#8–#11, #13, #14, #25, #27)
+are design findings for phase 2 and do not affect phase 1 code.
 
 ## A. Conflicts between the documents — decision needed
 
@@ -53,7 +55,7 @@ Phase 1 scope: dbt bronze → silver only. Alerting, monitoring, Docker, CI/CD a
 |---|---|---|
 | 28 | dbt-core / dbt-databricks line (1.10 assumed; ≥ 1.9 mandatory) - pin exact versions in `requirements.txt` | Martin D. (MTG action) |
 | 32 | Schema `dbt_stg` (silver catalog: staging views, seeds, CDC watermark table) is not covered by NC | NC owner |
-| 33 | Who applies the silver DDL per environment (object framework, BP 4.2.3) before the first dbt run | Platform |
+| 33 | Phase 1: dbt creates the silver tables, so DDL comments/tags/constraints are missing until phase 2 (or applied manually after builds). Phase 2: who applies the silver DDL per environment (object framework, BP 4.2.3) | Platform |
 
 ## E. Not yet implemented (next sprint)
 

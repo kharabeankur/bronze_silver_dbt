@@ -1,4 +1,4 @@
-{#- KCL adt_tasktype (full snapshot) -> snapshot typ_ukolu_hist -#}
+{#- KCL adt_tasktype (full snapshot) -> silver typ_ukolu -#}
 {%- set src = source('kcl', 'adt_tasktype') -%}
 
 with latest_batch as (
@@ -21,6 +21,7 @@ projected as (
         cast(s.ttl as int)                                          as dnu_do_archivace,
         cast(s.company_id as int)                                   as spolecnost_kod,
         {{ to_flag('s.is_obsolete') }}                              as neplatny_priznak,
+        s.__load_timestamp                                           as platnost_od_ts,
         s.__source_system                                           as __zdrojovy_system
     from latest_batch as s
     left join record_kind as rk
@@ -28,7 +29,7 @@ projected as (
 )
 
 select
-    {{ snapshot_staging_columns(
+    {{ silver_standard_columns(
         hkey='typ_ukolu_hkey',
         natural_key=['typ_ukolu_id'],
         hash_columns=['typ_ukolu_id', 'typ_ukolu_nazev', 'typ_ukolu_kratky_nazev', 'typ_zaznamu_kod',

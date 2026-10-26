@@ -1,13 +1,32 @@
 {#-
-  KCL sco_bdt_task (incremental deltas) -> ukol_hist (CDC, with delete feed).
-  smlouva_hkey stays NULL until the smlouva entity is delivered (it will be
-  resolved by pairing smlouva_cislo); it is excluded from the record hash so
-  filling it later does not create false versions (same reasoning as
-  Load_Pattern step 16).
+  KCL sco_bdt_task (incremental deltas) + sco_bdt_task_delete -> silver ukol.
+
+  Phase 1 = current state only:
+    * the latest row per task over the whole bronze history,
+    * smazano_priznak = true when the task was deleted after its last change
+      (rows are never physically removed - Load_Pattern step 17).
+  smlouva_hkey stays NULL until the smlouva entity exists (phase 1b) and is kept
+  out of hash_zaznamu so filling it later is not seen as a business change.
 -#}
 {%- set src = source('kcl', 'sco_bdt_task') -%}
+{%- set del_src = source('kcl', 'sco_bdt_task_delete') -%}
 
-with record_kind as (
+with latest_task as (
+    select *
+    from {{ src }}
+    qualify row_number() over (
+        partition by id
+        order by modification_date desc nulls last, date_inserted desc nulls last, __load_timestamp desc
+    ) = 1
+),
+
+latest_delete as (
+    select id, max(date_deleted) as date_deleted
+    from {{ del_src }}
+    group by id
+),
+
+record_kind as (
     select info_value, typ_zaznamu_kod
     from {{ ref('ref_typ_zaznamu') }}
     where source_object = '{{ source_table_name(src) }}'
@@ -46,6 +65,8 @@ projected as (
         t.modification_date                                                 as zmena_datum,
         t.queue_change_date                                                 as zmena_resitele_datum,
         cast(t.company_id as bigint)                                        as spolecnost_kod,
+        coalesce(d.date_deleted >= cast(coalesce(t.modification_date, t.create_date) as timestamp), false)
+                                                                            as smazano_priznak,
         named_struct(
             'jmeno',        t.client_firstname,
             'prijmeni',     t.client_surname,
@@ -63,23 +84,25 @@ projected as (
             'kcl_telefon',  t.kcl_phone
         )                                                                   as snimek_klienta_ccd,
         t.__source_system                                                   as __zdrojovy_system,
-        -- version start: day-granular source change date (see docs/deviations #10)
-        cast(coalesce(t.modification_date, t.create_date) as timestamp)     as platnost_od_ts,
-        t.__load_timestamp                                                  as _stg_load_ts,
-        coalesce(t.date_inserted, t.__load_timestamp)                       as _stg_seq
-    from {{ src }} as t
+        -- valid since: last change in the source, or the deletion if that came later
+        greatest(cast(coalesce(t.modification_date, t.create_date) as timestamp),
+                 coalesce(d.date_deleted, timestamp'1900-01-01'))           as platnost_od_ts
+    from latest_task as t
+    left join latest_delete as d on d.id = t.id
     left join record_kind as rk on rk.info_value = t.info
     left join party_map as pm on pm.zdrojovy_partner_id = t.party_id
 )
 
 select
-    {{ hash_key(['ukol_id']) }}                                             as ukol_hkey,
-    p.* except (snimek_klienta_ccd, __zdrojovy_system, platnost_od_ts, _stg_load_ts, _stg_seq),
-    p.__zdrojovy_system,
-    '{{ source_table_name(src) }}'                                          as __zdrojova_tabulka_nazev,
-    p.snimek_klienta_ccd,
-    {{ hash_of([{'expr': 'p.snimek_klienta_ccd', 'data_type': 'struct'}]) }} as hash_snimek_klienta_ccd,
-    p.platnost_od_ts,
-    p._stg_load_ts,
-    p._stg_seq
+    {{ silver_standard_columns(
+        hkey='ukol_hkey',
+        natural_key=['ukol_id'],
+        hash_columns=['ukol_id', 'typ_zaznamu_kod', 'typ_ukolu_hkey', 'podtyp_ukolu_hkey', 'stav_ukolu_hkey',
+                      'zpusob_dokonceni_hkey', 'autor_obchodnik_hkey', 'resitel_obchodnik_hkey', 'partner_id',
+                      'smlouva_cislo', 'pojistna_udalost_cislo', 'ukol_zdroj_id', 'fronta_kod', 'bonita_castka',
+                      'z_trziste_priznak', 'vznik_datum', 'termin_datum', 'upozorneni_datum', 'splneni_datum',
+                      'zmena_datum', 'zmena_resitele_datum', 'spolecnost_kod', 'smazano_priznak',
+                      {'expr': 'snimek_klienta_ccd', 'data_type': 'struct'}],
+        source_relation=src) }},
+    {{ hash_of([{'expr': 'p.snimek_klienta_ccd', 'data_type': 'struct'}]) }} as hash_snimek_klienta_ccd
 from projected as p

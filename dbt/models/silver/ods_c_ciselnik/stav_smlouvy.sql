@@ -1,2 +1,2 @@
-{#- Current state of stav_smlouvy: open versions of stav_smlouvy_hist (file 18 "kampan" pattern). -#}
-{{ current_from_snapshot(ref('stav_smlouvy_hist')) }}
+{#- Silver ods_c_ciselnik.stav_smlouvy - current state, rebuilt from bronze on every run (phase 1). -#}
+select * from {{ ref('stg_kcc__stav_poj_sml') }}

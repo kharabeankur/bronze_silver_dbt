@@ -1,2 +1,2 @@
-{#- Current state of typ_ukolu: open versions of typ_ukolu_hist (file 18 "kampan" pattern). -#}
-{{ current_from_snapshot(ref('typ_ukolu_hist')) }}
+{#- Silver ods_c_ciselnik.typ_ukolu - current state, rebuilt from bronze on every run (phase 1). -#}
+select * from {{ ref('stg_kcl__adt_tasktype') }}

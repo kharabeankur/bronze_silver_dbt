@@ -2,9 +2,9 @@
     Phase 2 adds monitoring tests here: invalid payload ratio, unresolved quarantine. -#}
 
 {#-
-  Full-snapshot completeness guard. Snapshots use hard_deletes='invalidate':
-  a truncated latest load would close every missing key. Fail if the latest
-  batch is smaller than min_ratio x the previous batch.
+  Full-snapshot completeness guard. Silver codelists are rebuilt from the
+  latest load, so a truncated load would silently remove rows. Fail if the
+  latest batch is smaller than min_ratio x the previous batch.
 -#}
 {% test latest_batch_complete(model, batch_column='__load_timestamp', min_ratio=none) %}
 {%- set ratio = min_ratio if min_ratio is not none else var('latest_batch_min_ratio') -%}

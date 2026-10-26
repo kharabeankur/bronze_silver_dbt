@@ -1,59 +1,22 @@
-# Silver ods_k_klient - contracts and data quality tests (Blueprint 5.1, RFP 2.1.2).
-# Test severity: error = blocks downstream nodes, warn = P2 alert.
+# Silver ods_k_klient - one row per business key (current state).
+# Tests run inside `dbt build` right after each table:
+#   unique / not_null on the hash key  -> error (stops dependent models)
+#   relationships to codelists         -> warning (FKs are NOT ENFORCED in Databricks)
 version: 2
 
 models:
-  - name: mapovani_id_partnera_hist
-    description: SCD2 history of mapovani_id_partnera (incremental MERGE, Load_Pattern steps 1-18).
-    columns:
-      - name: mapovani_id_partnera_hkey
-        data_tests:
-          - not_null
-          - scd2_single_open_version
-          - scd2_contiguous_versions
-      - name: verze_id
-        data_tests: [unique, not_null]
-      - name: hash_zaznamu
-        data_tests: [not_null]
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [mapovani_id_partnera_hkey, platnost_od_ts]
   - name: mapovani_id_partnera
-    description: Current state of mapovani_id_partnera - exactly the open versions of mapovani_id_partnera_hist.
     config:
-      tags: [pattern_cdc_scd2]
+      liquid_clustered_by: ['mapovani_id_partnera_hkey']
     columns:
       - name: mapovani_id_partnera_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('mapovani_id_partnera_hist')
+        data_tests: [unique, not_null]
     data_tests:
       - party_mapping_fully_resolved
-  - name: analyza_potreb_klienta_hist
-    description: SCD2 history of analyza_potreb_klienta (incremental MERGE, Load_Pattern steps 1-18).
-    columns:
-      - name: analyza_potreb_klienta_hkey
-        data_tests:
-          - not_null
-          - scd2_single_open_version
-          - scd2_contiguous_versions
-      - name: verze_id
-        data_tests: [unique, not_null]
-      - name: hash_zaznamu
-        data_tests: [not_null]
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [analyza_potreb_klienta_hkey, platnost_od_ts]
+
   - name: analyza_potreb_klienta
-    description: Current state of analyza_potreb_klienta - exactly the open versions of analyza_potreb_klienta_hist.
     config:
-      tags: [pattern_cdc_scd2]
+      liquid_clustered_by: ['analyza_potreb_klienta_hkey']
     columns:
       - name: analyza_potreb_klienta_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('analyza_potreb_klienta_hist')
+        data_tests: [unique, not_null]

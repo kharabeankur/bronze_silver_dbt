@@ -1,6 +1,6 @@
 {#-
-  KCC produkt (daily file, full snapshot) -> snapshot produkt_hist.
-  DEVIATION (docs/deviations #8): file 14 maps technicka_urokova_mira from
+  KCC produkt (daily file, full snapshot) -> silver produkt.
+  DEVIATION (docs/deviations #15): file 14 maps technicka_urokova_mira from
   nep_predpis (STRING). Bronze carries tum DECIMAL(3,1) = "technická úroková
   míra", which matches the silver type exactly; tum is used here pending
   confirmation by the data modeller.
@@ -37,12 +37,13 @@ projected as (
         cast(plati_do as date)                      as platnost_do_datum,
         cast(publik_od as date)                     as publikovano_od_datum,
         cast(publik_do as date)                     as publikovano_do_datum,
+        __load_timestamp                             as platnost_od_ts,
         __source_system                             as __zdrojovy_system
     from latest_batch
 )
 
 select
-    {{ snapshot_staging_columns(
+    {{ silver_standard_columns(
         hkey='produkt_hkey',
         natural_key=['produkt_kod', 'spolecnost_kod'],
         hash_columns=['produkt_kod', 'spolecnost_kod', 'produkt_kratky_nazev', 'produkt_nazev',

@@ -1,6 +1,6 @@
 selectors:
   - name: silver_daily
-    description: Everything bronze -> silver (seeds, staging, snapshots, history, current, tests).
+    description: Everything bronze -> silver (seeds, staging views, silver tables, tests).
     definition:
       method: tag
       value: layer_silver
@@ -12,11 +12,3 @@ selectors:
       method: tag
       value: domain_ciselnik
       parents: true
-
-  - name: silver_cdc
-    description: The incremental (CDC) entities and their current tables.
-    definition:
-      method: tag
-      value: pattern_cdc_scd2
-      parents: true
-      children: true

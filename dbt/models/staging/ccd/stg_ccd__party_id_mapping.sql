@@ -1,5 +1,5 @@
 {#-
-  CCD party_id_change_event -> mapovani_id_partnera_hist (batch_mode='full').
+  CCD party_id_change_event -> silver mapovani_id_partnera.
 
   Every identifier a party has ever had is mapped to the surviving one.
   "Chains are shortened during the load, so a lookup never needs more than one
@@ -7,8 +7,6 @@
   The chain is followed up to var('party_chain_max_depth') hops; the test
   party_mapping_fully_resolved fails if a longer chain or a cycle remains.
 
-  Because a new event can re-point old identifiers, this view always emits the
-  complete resolved mapping; the SCD2 macro then writes only real changes.
   platnost_od_ts = the latest change along the chain (when the resolved target
   became what it is).
 -#}
@@ -57,18 +55,26 @@ hop_{{ i }} as (
         on  n.zdrojovy_partner_id = h.resolved_id
         and n.cilovy_partner_id <> h.zdrojovy_partner_id     -- stop at a 2-cycle
 )
-{%- endfor %}
+{%- endfor %},
+
+projected as (
+    select
+        zdrojovy_partner_id,
+        resolved_id                                 as cilovy_partner_id,
+        zmena_ts,
+        chain_length                                as delka_retezce,
+        zmenu_provedl_login,
+        zdrojova_aplikace_id,
+        __zdrojovy_system,
+        chain_ts                                    as platnost_od_ts
+    from hop_{{ depth }}
+)
 
 select
-    {{ hash_key(['zdrojovy_partner_id']) }}     as mapovani_id_partnera_hkey,
-    zdrojovy_partner_id,
-    resolved_id                                 as cilovy_partner_id,
-    zmena_ts,
-    chain_length                                as delka_retezce,
-    zmenu_provedl_login,
-    zdrojova_aplikace_id,
-    __zdrojovy_system,
-    '{{ source_table_name(src) }}'              as __zdrojova_tabulka_nazev,
-    chain_ts                                    as platnost_od_ts,
-    cast(0 as bigint)                           as _stg_seq
-from hop_{{ depth }}
+    {{ silver_standard_columns(
+        hkey='mapovani_id_partnera_hkey',
+        natural_key=['zdrojovy_partner_id'],
+        hash_columns=['zdrojovy_partner_id', 'cilovy_partner_id', 'zmena_ts', 'delka_retezce',
+                      'zmenu_provedl_login', 'zdrojova_aplikace_id'],
+        source_relation=src) }}
+from projected as p

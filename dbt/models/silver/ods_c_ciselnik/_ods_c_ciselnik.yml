@@ -1,149 +1,88 @@
-# Silver ods_c_ciselnik - contracts and data quality tests (Blueprint 5.1, RFP 2.1.2).
-# Test severity: error = blocks downstream nodes, warn = P2 alert.
+# Silver ods_c_ciselnik - one row per business key (current state).
+# Tests run inside `dbt build` right after each table:
+#   unique / not_null on the hash key  -> error (stops dependent models)
+#   relationships to codelists         -> warning (FKs are NOT ENFORCED in Databricks)
 version: 2
 
 models:
   - name: distribucni_kanal
-    description: Current state of distribucni_kanal - exactly the open versions of distribucni_kanal_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['distribucni_kanal_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: distribucni_kanal_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('distribucni_kanal_hist')
+        data_tests: [unique, not_null]
+
   - name: stav_kontaktu
-    description: Current state of stav_kontaktu - exactly the open versions of stav_kontaktu_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['stav_kontaktu_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: stav_kontaktu_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('stav_kontaktu_hist')
+        data_tests: [unique, not_null]
+
   - name: stav_ukolu
-    description: Current state of stav_ukolu - exactly the open versions of stav_ukolu_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['stav_ukolu_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: stav_ukolu_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('stav_ukolu_hist')
+        data_tests: [unique, not_null]
+
   - name: typ_ukolu
-    description: Current state of typ_ukolu - exactly the open versions of typ_ukolu_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['typ_ukolu_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: typ_ukolu_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('typ_ukolu_hist')
+        data_tests: [unique, not_null]
+
   - name: podtyp_ukolu
-    description: Current state of podtyp_ukolu - exactly the open versions of podtyp_ukolu_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['podtyp_ukolu_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: podtyp_ukolu_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('podtyp_ukolu_hist')
+        data_tests: [unique, not_null]
       - name: typ_ukolu_hkey
         data_tests:
           - relationships:
               to: ref('typ_ukolu')
               field: typ_ukolu_hkey
-              config:
-                severity: warn   # Load_Pattern check 10: FKs are NOT ENFORCED in Databricks
+              config: {severity: warn}
+
   - name: zpusob_dokonceni_ukolu
-    description: Current state of zpusob_dokonceni_ukolu - exactly the open versions of zpusob_dokonceni_ukolu_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['zpusob_dokonceni_ukolu_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: zpusob_dokonceni_ukolu_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('zpusob_dokonceni_ukolu_hist')
+        data_tests: [unique, not_null]
       - name: typ_ukolu_hkey
         data_tests:
           - relationships:
               to: ref('typ_ukolu')
               field: typ_ukolu_hkey
-              config:
-                severity: warn   # Load_Pattern check 10: FKs are NOT ENFORCED in Databricks
+              config: {severity: warn}
+
   - name: produkt
-    description: Current state of produkt - exactly the open versions of produkt_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['produkt_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: produkt_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('produkt_hist')
+        data_tests: [unique, not_null]
+
   - name: mezinarodni_predvolba
-    description: Current state of mezinarodni_predvolba - exactly the open versions of mezinarodni_predvolba_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['mezinarodni_predvolba_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: mezinarodni_predvolba_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('mezinarodni_predvolba_hist')
+        data_tests: [unique, not_null]
+
   - name: typ_role_partnera
-    description: Current state of typ_role_partnera - exactly the open versions of typ_role_partnera_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['typ_role_partnera_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: typ_role_partnera_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('typ_role_partnera_hist')
+        data_tests: [unique, not_null]
+
   - name: stav_smlouvy
-    description: Current state of stav_smlouvy - exactly the open versions of stav_smlouvy_hist.
     config:
-      materialized: table
       liquid_clustered_by: ['stav_smlouvy_hkey']
-      tags: [pattern_snapshot]
     columns:
       - name: stav_smlouvy_hkey
-        data_tests:
-          - unique
-          - not_null
-          - scd2_current_matches_history:
-              history: ref('stav_smlouvy_hist')
+        data_tests: [unique, not_null]

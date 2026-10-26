@@ -1,5 +1,8 @@
 # ---------------------------------------------------------------------------
-# GCP Lakehouse - dbt project, PHASE 1: Bronze -> Silver.
+# GCP Lakehouse - dbt project, PHASE 1: Bronze -> Silver (current state).
+# Every run rebuilds each silver table from bronze. No history (SCD2) and no
+# change tracking (CDC) yet - those are phase 2 (folders snapshots/,
+# macros/scd2/, macros/cdc/ are reserved).
 #
 # One codebase for all environments. You pick the environment with
 #     dbt build --target dev | test | prod
@@ -19,10 +22,6 @@ test-paths: ["tests"]
 analysis-paths: ["analyses"]
 target-path: target
 clean-targets: [target, dbt_packages, logs]
-
-# Creates the small CDC watermark table if it does not exist yet.
-on-run-start:
-  - "{{ ensure_cdc_watermark_table() }}"
 
 vars:
   # ---- 1. Catalogs per dbt target (the ONLY environment-specific setting) ---
@@ -47,7 +46,7 @@ vars:
       gold: dbx_cz_gcz_prod_czlake_gold
 
   # ---- 2. Framework schemas -------------------------------------------------
-  staging_schema: dbt_stg          # silver catalog: staging views, seeds, CDC watermark table
+  staging_schema: dbt_stg          # silver catalog: staging views + seeds
   schema_prefix: ""                # optional personal prefix in dev (schema names <= 22 chars)
 
   # ---- 3. Keys and hashes (file 18) -----------------------------------------
@@ -55,11 +54,6 @@ vars:
   hash_separator: "||"
   hash_null_token: "~#null#~"      # explicit NULL marker (concat_ws alone drops NULLs)
   login_normalization: "lower(trim({col}))"
-
-  # ---- 4. SCD2 / CDC ----------------------------------------------------------
-  scd2_high_date: "9999-12-31 00:00:00"
-  cdc_low_watermark_default: "1900-01-01 00:00:00"
-  cdc_watermark_overlap_minutes: 60
 
   # ---- 5. Data typing ---------------------------------------------------------
   flag_true_values: ["1", "Y", "A", "ANO", "T", "TRUE"]
@@ -70,13 +64,15 @@ vars:
   invalid_message_policy_by_source: {}     # e.g. {src_redy: filter}
 
   # ---- 7. Safety + entity specific -------------------------------------------
-  latest_batch_min_ratio: 0.5              # stop snapshots if the latest full load is < 50 % of the previous
+  latest_batch_min_ratio: 0.5              # stop if the latest full load is < 50 % of the previous one
   party_chain_max_depth: 10
   sales_cockpit_mapping_as_of: "current_date()"
 
 models:
   gcp_lakehouse:
-    # Comments, tags and constraints come from the PowerDesigner DDL (/ddl).
+    # Phase 1: dbt creates the silver tables itself (create or replace).
+    # COMMENTs / tags / constraints from the PowerDesigner DDL are applied in
+    # phase 2 together with SCD2 (see ddl/README.md).
     +persist_docs: {relation: false, columns: false}
     +meta:
       owner: gcp-dbx-team-dwhbi
@@ -89,6 +85,7 @@ models:
 
     silver:
       +database: silver
+      +materialized: table           # phase 1: full rebuild each run
       +file_format: delta
       +tags: [layer_silver]
       +tblproperties:
@@ -100,21 +97,7 @@ models:
       # ods_s_smlouva: add when smlouva / navrh are implemented (phase 1b)
     # gold: add in phase 2 (+database: gold)
 
-snapshots:
-  gcp_lakehouse:
-    # Common SCD2 contract (file 14 sheet dbt_Config, file 18).
-    +database: silver
-    +file_format: delta
-    +strategy: check
-    +check_cols: [hash_zaznamu]
-    +hard_deletes: invalidate
-    +dbt_valid_to_current: "to_timestamp('{{ var('scd2_high_date') }}')"
-    +snapshot_meta_column_names:
-      dbt_scd_id: verze_id
-      dbt_valid_from: platnost_od_ts
-      dbt_valid_to: platnost_do_ts
-      dbt_updated_at: __dbt_updated_at
-    +tags: [layer_silver, pattern_snapshot]
+# snapshots:   phase 2 - SCD2 history (<entity>_hist) via dbt snapshots
 
 seeds:
   gcp_lakehouse:

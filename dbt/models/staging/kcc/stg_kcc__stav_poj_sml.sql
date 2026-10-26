@@ -1,9 +1,9 @@
 {#-
-  KCC stav_poj_sml + man.stav_poj_sml_sales_cockpit -> snapshot stav_smlouvy_hist.
+  KCC stav_poj_sml + man.stav_poj_sml_sales_cockpit -> silver stav_smlouvy.
   The Sales Cockpit display name is merged in from the manual mapping table
   "for the date on which the codelist item is valid" (file 14 Bronze_Mapping);
   the as-of date is configuration: var('sales_cockpit_mapping_as_of').
-  A change of the mapping validity therefore creates a new codelist version.
+  When the mapping validity rolls over, the next run picks up the new name.
 -#}
 {%- set src = source('src_kcc', 'stav_poj_sml') -%}
 {%- set map_src = source('man', 'stav_poj_sml_sales_cockpit') -%}
@@ -35,6 +35,7 @@ projected as (
         cast(s.plati_do as date)                        as platnost_do_datum,
         cast(s.publik_od as date)                       as publikovano_od_datum,
         cast(s.publik_do as date)                       as publikovano_do_datum,
+        s.__load_timestamp                               as platnost_od_ts,
         s.__source_system                               as __zdrojovy_system
     from status as s
     left join sales_cockpit_map as m
@@ -43,7 +44,7 @@ projected as (
 )
 
 select
-    {{ snapshot_staging_columns(
+    {{ silver_standard_columns(
         hkey='stav_smlouvy_hkey',
         natural_key=['stav_smlouvy_kod', 'spolecnost_kod'],
         hash_columns=['stav_smlouvy_kod', 'spolecnost_kod', 'stav_smlouvy_nazev', 'stav_smlouvy_alfanum_kod',

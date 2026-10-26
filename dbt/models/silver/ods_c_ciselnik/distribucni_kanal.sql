@@ -1,2 +1,2 @@
-{#- Current state of distribucni_kanal: open versions of distribucni_kanal_hist (file 18 "kampan" pattern). -#}
-{{ current_from_snapshot(ref('distribucni_kanal_hist')) }}
+{#- Silver ods_c_ciselnik.distribucni_kanal - current state, rebuilt from bronze on every run (phase 1). -#}
+select * from {{ ref('stg_kcl__adt_campaign_channel') }}

@@ -1,4 +1,4 @@
-{#- KCC dial_international_codes (daily file, full snapshot) -> snapshot mezinarodni_predvolba_hist -#}
+{#- KCC dial_international_codes (daily file, full snapshot) -> silver mezinarodni_predvolba -#}
 {%- set src = source('src_kcc', 'dial_international_codes') -%}
 
 with latest_batch as (
@@ -16,12 +16,13 @@ projected as (
         cast(plati_do as date)              as platnost_do_datum,
         cast(publik_od as date)             as publikovano_od_datum,
         cast(publik_do as date)             as publikovano_do_datum,
+        __load_timestamp                     as platnost_od_ts,
         __source_system                     as __zdrojovy_system
     from latest_batch
 )
 
 select
-    {{ snapshot_staging_columns(
+    {{ silver_standard_columns(
         hkey='mezinarodni_predvolba_hkey',
         natural_key=['stat_iso2_kod'],
         hash_columns=['predvolba_kod', 'stat_iso2_kod', 'stat_iso3_kod', 'stat_nazev', 'poradi',

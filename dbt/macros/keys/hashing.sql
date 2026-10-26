@@ -37,8 +37,7 @@
 
 {#-
   Hash of a list of expressions. Items may be plain SQL strings or
-  {'expr': .., 'data_type': ..} dicts (used by the SCD2 macro after column
-  introspection).
+  {'expr': .., 'data_type': ..} dicts (needed for STRUCT / ARRAY columns).
 -#}
 {% macro hash_of(items) -%}
     {%- if items | length == 0 -%}

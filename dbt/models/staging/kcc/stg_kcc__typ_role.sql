@@ -1,4 +1,4 @@
-{#- KCC typ_role (daily file, full snapshot) -> snapshot typ_role_partnera_hist -#}
+{#- KCC typ_role (daily file, full snapshot) -> silver typ_role_partnera -#}
 {%- set src = source('src_kcc', 'typ_role') -%}
 
 with latest_batch as (
@@ -14,12 +14,13 @@ projected as (
         cast(plati_do as date)              as platnost_do_datum,
         cast(publik_od as date)             as publikovano_od_datum,
         cast(publik_do as date)             as publikovano_do_datum,
+        __load_timestamp                     as platnost_od_ts,
         __source_system                     as __zdrojovy_system
     from latest_batch
 )
 
 select
-    {{ snapshot_staging_columns(
+    {{ silver_standard_columns(
         hkey='typ_role_partnera_hkey',
         natural_key=['typ_role_kod'],
         hash_columns=['typ_role_kod', 'typ_role_nazev', 'vyskyt_role_kod', 'platnost_od_datum',

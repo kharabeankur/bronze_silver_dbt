@@ -1,10 +1,10 @@
 # ---------------------------------------------------------------------------
 # Bronze KCL tables (direct ETL, append-only - every load is appended).
 #   etl_full_snapshot : every load is a COMPLETE image -> staging reads the latest load
-#   etl_incremental   : every load is a DELTA          -> staging reads changes / latest per key
+#   etl_incremental   : every load is a DELTA          -> staging reads the latest row per key
 # meta.batch_column = the column that identifies one load.
-# The test latest_batch_complete stops the snapshots if the newest full load is
-# suspiciously small (otherwise missing rows would be treated as deleted).
+# The test latest_batch_complete stops the silver build if the newest full load is
+# suspiciously small (otherwise the silver codelist would silently lose rows).
 # ---------------------------------------------------------------------------
 version: 2
 

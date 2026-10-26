@@ -1,2 +1,2 @@
-{#- Current state of kampan: open versions of kampan_hist (file 18 "kampan" pattern). -#}
-{{ current_from_snapshot(ref('kampan_hist')) }}
+{#- Silver ods_d_distribuce.kampan - current state, rebuilt from bronze on every run (phase 1). -#}
+select * from {{ ref('stg_kcl__bdt_campaign_wave') }}

@@ -4,15 +4,9 @@
 {%- endmacro %}
 
 
-{#- SQL literal of the fixed SCD2 high date (open version marker). -#}
-{% macro scd2_high_date() -%}
-    to_timestamp('{{ var("scd2_high_date") }}')
-{%- endmacro %}
-
-
 {#-
   Latest complete load of a full-snapshot source (KCL codelists, KCC files).
-  Bronze is append-only, so a full snapshot source holds every load; only the
+  Bronze is append-only, so a full-snapshot source holds every load; only the
   newest one represents the current state. The batch column is declared per
   source table in its YAML meta (batch_column), default __load_timestamp.
   For file loads use __file_path, so one file = one batch.
