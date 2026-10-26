@@ -1,0 +1,169 @@
+# ---------------------------------------------------------------------------
+# ods_c_ciselnik - SCD2 history tables built by dbt snapshots (file 14 sheet dbt_Config).
+# The common contract (strategy=check on hash_zaznamu, meta column names,
+# 9999-12-31 open marker, hard_deletes) is set once in dbt_project.yml.
+# A snapshot here is configuration only - the transformation is the staging view.
+# NOTE: snapshot_meta_column_names cannot be changed after the first run.
+# ---------------------------------------------------------------------------
+version: 2
+
+snapshots:
+  - name: distribucni_kanal_hist
+    description: "SCD2 history of distribucni_kanal. Conformed codelist of distribution channels (KCL)."
+    relation: ref('stg_kcl__adt_campaign_channel')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: distribucni_kanal_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: distribucni_kanal_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: stav_kontaktu_hist
+    description: "SCD2 history of stav_kontaktu. Campaign contact states / agent feedback (KCL)."
+    relation: ref('stg_kcl__adt_solution_state')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: stav_kontaktu_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: stav_kontaktu_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: stav_ukolu_hist
+    description: "SCD2 history of stav_ukolu. Task statuses (KCL)."
+    relation: ref('stg_kcl__adt_taskstatus')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: stav_ukolu_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: stav_ukolu_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: typ_ukolu_hist
+    description: "SCD2 history of typ_ukolu. Task types and their handling properties (KCL)."
+    relation: ref('stg_kcl__adt_tasktype')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: typ_ukolu_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: typ_ukolu_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: podtyp_ukolu_hist
+    description: "SCD2 history of podtyp_ukolu. Task subtypes with type link and premium flag (KCL)."
+    relation: ref('stg_kcl__adt_tasksubtype')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: podtyp_ukolu_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: podtyp_ukolu_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: zpusob_dokonceni_ukolu_hist
+    description: "SCD2 history of zpusob_dokonceni_ukolu. Task completion types with success flag (KCL)."
+    relation: ref('stg_kcl__adt_finishtype')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: zpusob_dokonceni_ukolu_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: zpusob_dokonceni_ukolu_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: produkt_hist
+    description: "SCD2 history of produkt. Insurance product catalogue (KCC)."
+    relation: ref('stg_kcc__produkt')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: produkt_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: produkt_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: mezinarodni_predvolba_hist
+    description: "SCD2 history of mezinarodni_predvolba. International dial codes and ISO country codes (KCC)."
+    relation: ref('stg_kcc__dial_international_codes')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: mezinarodni_predvolba_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: mezinarodni_predvolba_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: typ_role_partnera_hist
+    description: "SCD2 history of typ_role_partnera. Party role types on a contract or claim (KCC)."
+    relation: ref('stg_kcc__typ_role')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: typ_role_partnera_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: typ_role_partnera_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+
+  - name: stav_smlouvy_hist
+    description: "SCD2 history of stav_smlouvy. Contract / proposal statuses incl. Sales Cockpit display name (KCC + manual)."
+    relation: ref('stg_kcc__stav_poj_sml')
+    config:
+      schema: ods_c_ciselnik
+      unique_key: stav_smlouvy_hkey
+      tags: [domain_ciselnik]
+    columns:
+      - name: stav_smlouvy_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]

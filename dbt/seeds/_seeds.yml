@@ -1,0 +1,24 @@
+version: 2
+
+seeds:
+  - name: ref_typ_zaznamu
+    description: >
+      Decoding of the KCL INFO flag into typ_zaznamu_kod (UKOL / INFORMACE /
+      PRILEZITOST). File 14 notes that the INFO coding differs between the
+      source columns, hence one row per source object.
+      ASSUMPTION - the values 0/1/2 are placeholders and MUST be confirmed
+      with the KCL owner before go-live (docs/deviations-and-open-items.md).
+      Unmapped values become var('unknown_code') and raise a warning test.
+    config:
+      column_types:
+        source_object: string
+        info_value: bigint
+        typ_zaznamu_kod: string
+    columns:
+      - name: typ_zaznamu_kod
+        data_tests:
+          - accepted_values:
+              values: [UKOL, INFORMACE, PRILEZITOST]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [source_object, info_value]

@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------------
+# Bronze KCL tables (direct ETL, append-only - every load is appended).
+#   etl_full_snapshot : every load is a COMPLETE image -> staging reads the latest load
+#   etl_incremental   : every load is a DELTA          -> staging reads changes / latest per key
+# meta.batch_column = the column that identifies one load.
+# The test latest_batch_complete stops the snapshots if the newest full load is
+# suspiciously small (otherwise missing rows would be treated as deleted).
+# ---------------------------------------------------------------------------
+version: 2
+
+sources:
+  - name: kcl
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: KCL - campaigns, tasks, organisational structure.
+    meta: {batch_column: __load_timestamp}
+    tables:
+      - name: adt_campaign_channel
+        meta: {load_type: etl_full_snapshot}
+        data_tests: &kcl_full_snapshot_tests
+          - latest_batch_complete:
+              batch_column: __load_timestamp
+      - {name: adt_region_agency_channel, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: adt_solution_state, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: adt_taskstatus, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: adt_tasktype, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: adt_tasksubtype, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: adt_type_subtype, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: adt_finishtype, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: bdt_ppz, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: bdt_seller, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: bdt_group_manager, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: bdt_district_director, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: bdt_regional_director, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: bdt_administration, meta: {load_type: etl_full_snapshot}, data_tests: *kcl_full_snapshot_tests}
+      - {name: sco_bdt_task, meta: {load_type: etl_incremental}}
+      - {name: sco_bdt_task_delete, meta: {load_type: etl_incremental}}
+      - {name: sco_bdt_add_mat, meta: {load_type: etl_incremental}}
+      - {name: sco_bdt_add_mat_delete, meta: {load_type: etl_incremental}}
+      - {name: bdt_campaign_wave, meta: {load_type: etl_incremental}}

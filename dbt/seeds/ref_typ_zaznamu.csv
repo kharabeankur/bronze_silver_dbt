@@ -1,0 +1,7 @@
+source_object,info_value,typ_zaznamu_kod
+kcl.adt_tasktype,0,UKOL
+kcl.adt_tasktype,1,INFORMACE
+kcl.adt_tasktype,2,PRILEZITOST
+kcl.sco_bdt_task,0,UKOL
+kcl.sco_bdt_task,1,INFORMACE
+kcl.sco_bdt_task,2,PRILEZITOST

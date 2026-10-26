@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------------
+# Bronze KCC codelists + manual mapping table: daily CSV files from landing.
+# One file = one load, so the batch column is __file_path.
+# ---------------------------------------------------------------------------
+version: 2
+
+sources:
+  - name: src_kcc
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: KCC central codelists (daily CSV).
+    meta: {load_type: file_full_snapshot, batch_column: __file_path}
+    tables:
+      - name: produkt
+        data_tests: &file_full_snapshot_tests
+          - latest_batch_complete:
+              batch_column: __file_path
+      - {name: dial_international_codes, data_tests: *file_full_snapshot_tests}
+      - {name: typ_role,                 data_tests: *file_full_snapshot_tests}
+      - {name: stav_poj_sml,             data_tests: *file_full_snapshot_tests}
+
+  - name: man
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: Manually uploaded mapping tables.
+    meta: {load_type: file_full_snapshot, batch_column: __file_path}
+    tables:
+      - name: stav_poj_sml_sales_cockpit
+        description: Status -> Sales Cockpit display name (drives Contract / Proposal routing later).

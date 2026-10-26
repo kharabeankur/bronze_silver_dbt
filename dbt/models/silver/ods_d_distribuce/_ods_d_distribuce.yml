@@ -1,0 +1,81 @@
+# Silver ods_d_distribuce - contracts and data quality tests (Blueprint 5.1, RFP 2.1.2).
+# Test severity: error = blocks downstream nodes, warn = P2 alert.
+version: 2
+
+models:
+  - name: kampan
+    description: Current state of kampan - exactly the open versions of kampan_hist.
+    config:
+      materialized: table
+      liquid_clustered_by: ['kampan_hkey']
+      tags: [pattern_snapshot]
+    columns:
+      - name: kampan_hkey
+        data_tests:
+          - unique
+          - not_null
+          - scd2_current_matches_history:
+              history: ref('kampan_hist')
+      - name: distribucni_kanal_hkey
+        data_tests:
+          - relationships:
+              to: ref('distribucni_kanal')
+              field: distribucni_kanal_hkey
+              config:
+                severity: warn   # Load_Pattern check 10: FKs are NOT ENFORCED in Databricks
+  - name: ukol_hist
+    description: SCD2 history of ukol (incremental MERGE, Load_Pattern steps 1-18).
+    columns:
+      - name: ukol_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ukol_hkey, platnost_od_ts]
+  - name: ukol
+    description: Current state of ukol - exactly the open versions of ukol_hist.
+    config:
+      tags: [pattern_cdc_scd2]
+    columns:
+      - name: ukol_hkey
+        data_tests:
+          - unique
+          - not_null
+          - scd2_current_matches_history:
+              history: ref('ukol_hist')
+      - name: typ_ukolu_hkey
+        data_tests:
+          - relationships:
+              to: ref('typ_ukolu')
+              field: typ_ukolu_hkey
+              config:
+                severity: warn   # Load_Pattern check 10: FKs are NOT ENFORCED in Databricks
+      - name: podtyp_ukolu_hkey
+        data_tests:
+          - relationships:
+              to: ref('podtyp_ukolu')
+              field: podtyp_ukolu_hkey
+              config:
+                severity: warn   # Load_Pattern check 10: FKs are NOT ENFORCED in Databricks
+      - name: stav_ukolu_hkey
+        data_tests:
+          - relationships:
+              to: ref('stav_ukolu')
+              field: stav_ukolu_hkey
+              config:
+                severity: warn   # Load_Pattern check 10: FKs are NOT ENFORCED in Databricks
+      - name: zpusob_dokonceni_hkey
+        data_tests:
+          - relationships:
+              to: ref('zpusob_dokonceni_ukolu')
+              field: zpusob_dokonceni_ukolu_hkey
+              config:
+                severity: warn   # Load_Pattern check 10: FKs are NOT ENFORCED in Databricks
+      - name: smazano_priznak
+        data_tests: [not_null]

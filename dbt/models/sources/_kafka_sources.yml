@@ -1,0 +1,51 @@
+# ---------------------------------------------------------------------------
+# Bronze Kafka tables (file 11). Loaded by Databricks (Kafka -> landing -> bronze),
+# append-only: one row per Kafka message. dbt only READS them.
+# Quarantine tables, freshness SLAs and payload monitoring come in phase 2.
+# ---------------------------------------------------------------------------
+version: 2
+
+sources:
+  - name: src_hugo
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: HUGO non-life offers (Kafka).
+    meta: {load_type: kafka_cdc}
+    tables:
+      - name: nonlife_policy_sales_cockpit_sync_event
+
+  - name: src_lisa
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: LISA life offers (Kafka).
+    meta: {load_type: kafka_cdc}
+    tables:
+      - name: life_policy_sales_cockpit_sync_event
+
+  - name: src_tia
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: TIA non-life policy overview (Kafka).
+    meta: {load_type: kafka_cdc}
+    tables:
+      - name: nonlife_policy_overview_sync_event
+      - name: nonlife_policy_overview_delete_event
+
+  - name: src_kdp
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: KDP life policy overview (Kafka).
+    meta: {load_type: kafka_cdc}
+    tables:
+      - name: life_policy_overview_sync_event
+      - name: life_policy_overview_delete_event
+
+  - name: src_redy
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: REDy client needs analysis (Kafka).
+    meta: {load_type: kafka_cdc}
+    tables:
+      - name: client_needs_analysis_overview_sync_event
+
+  - name: src_ccd
+    database: "{{ var('catalogs_by_target')[target.name]['bronze'] }}"
+    description: CCD party identifier changes (Kafka).
+    meta: {load_type: kafka_cdc}
+    tables:
+      - name: party_id_change_event

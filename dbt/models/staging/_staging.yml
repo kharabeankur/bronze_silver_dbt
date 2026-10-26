@@ -1,0 +1,164 @@
+# ---------------------------------------------------------------------------
+# Staging contract tests. In `dbt build` these run BEFORE the snapshot /
+# incremental model that reads the view, so a broken key never reaches
+# silver: severity error blocks the downstream node (Load_Pattern check 1).
+# ---------------------------------------------------------------------------
+version: 2
+
+models:
+  - name: stg_kcl__adt_campaign_channel
+    description: Snapshot input for distribucni_kanal_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: distribucni_kanal_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcl__adt_solution_state
+    description: Snapshot input for stav_kontaktu_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: stav_kontaktu_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcl__adt_taskstatus
+    description: Snapshot input for stav_ukolu_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: stav_ukolu_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcl__adt_tasktype
+    description: Snapshot input for typ_ukolu_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: typ_ukolu_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcl__adt_tasksubtype
+    description: Snapshot input for podtyp_ukolu_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: podtyp_ukolu_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcl__adt_finishtype
+    description: Snapshot input for zpusob_dokonceni_ukolu_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: zpusob_dokonceni_ukolu_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcl__bdt_campaign_wave
+    description: Snapshot input for kampan_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: kampan_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcc__produkt
+    description: Snapshot input for produkt_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: produkt_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcc__dial_international_codes
+    description: Snapshot input for mezinarodni_predvolba_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: mezinarodni_predvolba_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcc__typ_role
+    description: Snapshot input for typ_role_partnera_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: typ_role_partnera_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  - name: stg_kcc__stav_poj_sml
+    description: Snapshot input for stav_smlouvy_hist (pattern_snapshot).
+    config:
+      tags: [pattern_snapshot]
+    columns:
+      - name: stav_smlouvy_hkey
+        data_tests: [unique, not_null]
+      - name: hash_zaznamu
+        data_tests: [not_null]
+
+  # --- CDC staging (pattern_cdc_scd2) ------------------------------------------
+  - name: stg_ccd__party_id_mapping
+    description: Complete resolved party-id mapping (input of mapovani_id_partnera_hist, batch_mode full).
+    config:
+      tags: [pattern_cdc_scd2]
+    columns:
+      - name: mapovani_id_partnera_hkey
+        data_tests: [unique, not_null]
+      - name: cilovy_partner_id
+        data_tests: [not_null]
+    data_tests:
+      - party_mapping_fully_resolved
+
+  - name: stg_redy__client_needs_analysis
+    description: REDy analyses, one row per Kafka message (input of analyza_potreb_klienta_hist).
+    config:
+      tags: [pattern_cdc_scd2]
+    columns:
+      - name: analyza_potreb_klienta_hkey
+        data_tests: [not_null]
+      - name: platnost_od_ts
+        data_tests: [not_null]
+
+  - name: stg_kcl__sco_bdt_task
+    description: KCL tasks, one row per bronze row (input of ukol_hist).
+    config:
+      tags: [pattern_cdc_scd2]
+    columns:
+      - name: ukol_hkey
+        data_tests: [not_null]
+      - name: platnost_od_ts
+        data_tests: [not_null]
+      - name: typ_zaznamu_kod
+        data_tests:
+          - accepted_or_unknown:
+              config: {severity: warn}
+
+  - name: stg_kcl__sco_bdt_task_delete
+    description: KCL task deletions (delete markers for ukol_hist).
+    config:
+      tags: [pattern_cdc_scd2]
+    columns:
+      - name: ukol_hkey
+        data_tests: [not_null]
+      - name: platnost_od_ts
+        data_tests: [not_null]

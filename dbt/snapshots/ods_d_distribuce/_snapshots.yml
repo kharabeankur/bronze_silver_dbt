@@ -1,0 +1,25 @@
+# ---------------------------------------------------------------------------
+# ods_d_distribuce - SCD2 history tables built by dbt snapshots (file 14 sheet dbt_Config).
+# The common contract (strategy=check on hash_zaznamu, meta column names,
+# 9999-12-31 open marker, hard_deletes) is set once in dbt_project.yml.
+# A snapshot here is configuration only - the transformation is the staging view.
+# NOTE: snapshot_meta_column_names cannot be changed after the first run.
+# ---------------------------------------------------------------------------
+version: 2
+
+snapshots:
+  - name: kampan_hist
+    description: "SCD2 history of kampan. Sales campaign (KCL campaign wave)."
+    relation: ref('stg_kcl__bdt_campaign_wave')
+    config:
+      schema: ods_d_distribuce
+      unique_key: kampan_hkey
+      tags: [domain_distribuce]
+    columns:
+      - name: kampan_hkey
+        data_tests:
+          - not_null
+          - scd2_single_open_version
+          - scd2_contiguous_versions
+      - name: verze_id
+        data_tests: [unique, not_null]

@@ -1,0 +1,123 @@
+# ---------------------------------------------------------------------------
+# GCP Lakehouse - dbt project, PHASE 1: Bronze -> Silver.
+#
+# One codebase for all environments. You pick the environment with
+#     dbt build --target dev | test | prod
+# and the catalogs for that target are taken from var 'catalogs_by_target'.
+# ---------------------------------------------------------------------------
+name: gcp_lakehouse
+version: "0.1.0"
+config-version: 2
+profile: gcp_lakehouse
+require-dbt-version: [">=1.9.0", "<2.0.0"]
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+target-path: target
+clean-targets: [target, dbt_packages, logs]
+
+# Creates the small CDC watermark table if it does not exist yet.
+on-run-start:
+  - "{{ ensure_cdc_watermark_table() }}"
+
+vars:
+  # ---- 1. Catalogs per dbt target (the ONLY environment-specific setting) ---
+  # OPEN DECISION: physical models use dbx_cz_gcz_<env>_czlake_<layer>, the
+  # naming convention v0.4 uses gcp_dwhbi_all_<layer>_<env>. Change only here.
+  catalogs_by_target:
+    local:
+      bronze: dbx_cz_gcz_dev_czlake_bronze
+      silver: dbx_cz_gcz_dev_czlake_silver
+      gold: dbx_cz_gcz_dev_czlake_gold
+    dev:
+      bronze: dbx_cz_gcz_dev_czlake_bronze
+      silver: dbx_cz_gcz_dev_czlake_silver
+      gold: dbx_cz_gcz_dev_czlake_gold
+    test:
+      bronze: dbx_cz_gcz_test_czlake_bronze
+      silver: dbx_cz_gcz_test_czlake_silver
+      gold: dbx_cz_gcz_test_czlake_gold
+    prod:
+      bronze: dbx_cz_gcz_prod_czlake_bronze
+      silver: dbx_cz_gcz_prod_czlake_silver
+      gold: dbx_cz_gcz_prod_czlake_gold
+
+  # ---- 2. Framework schemas -------------------------------------------------
+  staging_schema: dbt_stg          # silver catalog: staging views, seeds, CDC watermark table
+  schema_prefix: ""                # optional personal prefix in dev (schema names <= 22 chars)
+
+  # ---- 3. Keys and hashes (file 18) -----------------------------------------
+  hash_algorithm: md5              # md5 | sha2_256
+  hash_separator: "||"
+  hash_null_token: "~#null#~"      # explicit NULL marker (concat_ws alone drops NULLs)
+  login_normalization: "lower(trim({col}))"
+
+  # ---- 4. SCD2 / CDC ----------------------------------------------------------
+  scd2_high_date: "9999-12-31 00:00:00"
+  cdc_low_watermark_default: "1900-01-01 00:00:00"
+  cdc_watermark_overlap_minutes: 60
+
+  # ---- 5. Data typing ---------------------------------------------------------
+  flag_true_values: ["1", "Y", "A", "ANO", "T", "TRUE"]
+  unknown_code: "NEZNAMY"
+
+  # ---- 6. Bronze payload validation (file 11) --------------------------------
+  invalid_message_policy: pass             # pass | filter
+  invalid_message_policy_by_source: {}     # e.g. {src_redy: filter}
+
+  # ---- 7. Safety + entity specific -------------------------------------------
+  latest_batch_min_ratio: 0.5              # stop snapshots if the latest full load is < 50 % of the previous
+  party_chain_max_depth: 10
+  sales_cockpit_mapping_as_of: "current_date()"
+
+models:
+  gcp_lakehouse:
+    # Comments, tags and constraints come from the PowerDesigner DDL (/ddl).
+    +persist_docs: {relation: false, columns: false}
+    +meta:
+      owner: gcp-dbx-team-dwhbi
+
+    staging:
+      +database: silver
+      +schema: "{{ var('staging_schema') }}"
+      +materialized: view
+      +tags: [layer_staging]
+
+    silver:
+      +database: silver
+      +file_format: delta
+      +tags: [layer_silver]
+      +tblproperties:
+        delta.enableChangeDataFeed: "true"
+        delta.columnMapping.mode: name
+      ods_c_ciselnik:   {+schema: ods_c_ciselnik,   +tags: [domain_ciselnik]}
+      ods_d_distribuce: {+schema: ods_d_distribuce, +tags: [domain_distribuce]}
+      ods_k_klient:     {+schema: ods_k_klient,     +tags: [domain_klient]}
+      # ods_s_smlouva: add when smlouva / navrh are implemented (phase 1b)
+    # gold: add in phase 2 (+database: gold)
+
+snapshots:
+  gcp_lakehouse:
+    # Common SCD2 contract (file 14 sheet dbt_Config, file 18).
+    +database: silver
+    +file_format: delta
+    +strategy: check
+    +check_cols: [hash_zaznamu]
+    +hard_deletes: invalidate
+    +dbt_valid_to_current: "to_timestamp('{{ var('scd2_high_date') }}')"
+    +snapshot_meta_column_names:
+      dbt_scd_id: verze_id
+      dbt_valid_from: platnost_od_ts
+      dbt_valid_to: platnost_do_ts
+      dbt_updated_at: __dbt_updated_at
+    +tags: [layer_silver, pattern_snapshot]
+
+seeds:
+  gcp_lakehouse:
+    +database: silver
+    +schema: "{{ var('staging_schema') }}"
+    +tags: [layer_staging]
